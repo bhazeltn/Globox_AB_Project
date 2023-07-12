@@ -1,0 +1,70 @@
+SELECT MIN(join_dt) AS start_date, MAX(join_dt) AS end_date
+FROM groups;
+
+SELECT COUNT(DISTINCT id) AS total_users
+FROM users;
+
+SELECT "group", COUNT(DISTINCT uid) AS num_users
+FROM groups
+GROUP BY "group";
+
+SELECT
+  COUNT(DISTINCT CASE WHEN a.uid IS NOT NULL THEN a.uid END) AS converted_users,
+  COUNT(DISTINCT u.id) AS total_users,
+  CAST(COUNT(DISTINCT CASE WHEN a.uid IS NOT NULL THEN a.uid END) AS DECIMAL) / COUNT(DISTINCT u.id) AS conversion_rate
+FROM
+  users u
+LEFT JOIN
+  activity a ON u.id = a.uid;
+
+SELECT
+	g.group,
+  COUNT(DISTINCT CASE WHEN a.uid IS NOT NULL THEN a.uid END) AS converted_users,
+  COUNT(DISTINCT u.id) AS total_users,
+  CAST(COUNT(DISTINCT CASE WHEN a.uid IS NOT NULL THEN a.uid END) AS DECIMAL) / COUNT(DISTINCT u.id) AS conversion_rate
+FROM
+  users u
+LEFT JOIN
+  activity a ON u.id = a.uid
+JOIN
+  groups g ON u.id = g.uid
+GROUP BY
+  g.group;
+
+
+SELECT
+  g.group,
+  AVG(COALESCE(a.spent, 0)) AS average_amount_spent
+FROM
+  users u
+LEFT JOIN
+  groups g ON u.id = g.uid
+LEFT JOIN
+  activity a ON u.id = a.uid
+GROUP BY
+  g.group;
+
+/* Query to retrieve user information */
+SELECT
+  u.id AS user_id,
+  COALESCE(u.country, 'Unknown') as country,
+  COALESCE(u.gender, 'U') AS gender,
+  COALESCE(g.device, 'U') AS device,
+  g.group AS test_group,
+  g.join_dt AS join_date,
+  CASE WHEN a.spent > 0 THEN 'Yes' ELSE 'No' END AS converted,
+  ROUND(COALESCE(SUM(a.spent), 0)::numeric, 2) AS total_spent
+FROM
+  users u
+LEFT JOIN
+  groups g ON u.id = g.uid
+LEFT JOIN
+  activity a ON u.id = a.uid
+GROUP BY
+  u.id,
+  country,
+  gender,
+  g.device,
+  g.group,
+  g.join_dt,
+  converted;
